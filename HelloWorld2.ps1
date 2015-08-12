@@ -5,6 +5,8 @@
 #
 #################################
 
+Install-WindowsFeature -Name NET-Framework-Features
+
 # Analysis Mgmt Objects 
 $source = "http://go.microsoft.com/fwlink/?LinkID=239666&clcid=0x409"
 $destination = "c:\Windows\temp\AMO.msi"
