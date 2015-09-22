@@ -35,8 +35,11 @@
         "ciresonsqlpubipDnsName": {
             "value": "ciresonpocsql1"
         },
-        "AssetLocation": {
-            "value": "https://github.com/pzerger/temp/tree/master"
+        "contososysctrappType": {
+            "value": "Standard_LRS"
+        },
+        "contososysctrappLocation": {
+            "value": "West US"
         }
     }
 }

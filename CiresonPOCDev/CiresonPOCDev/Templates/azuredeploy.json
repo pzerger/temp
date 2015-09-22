@@ -39,7 +39,8 @@
             }
         },
         "contososysctrappName": {
-            "type": "string"
+            "type": "string",
+            "defaultValue": "contosopocstorage"
         },
         "contososysctrappType": {
             "type": "string",
@@ -117,14 +118,24 @@
             "type": "securestring",
             "defaultValue": "P@ssw0rd1!"
         },
-        "SQL1WindowsOSVersion": {
+        "SQL1ImageOffer": {
             "type": "string",
-            "defaultValue": "2012-R2-Datacenter",
+            "defaultValue": "SQL2012SP2-WS2012R2",
             "allowedValues": [
-                "2008-R2-SP1",
-                "2012-Datacenter",
-                "2012-R2-Datacenter",
-                "Windows-Server-Technical-Preview"
+                "SQL2008R2SP3-WS2008R2SP1",
+                "SQL2012SP2-WS2012",
+                "SQL2012SP2-WS2012R2",
+                "SQL2014-WS2012R2",
+                "SQL2014SP1-WS2012R2",
+                "SQL2016CTP2-WS2012R2"
+            ]
+        },
+        "SQL1ImageSKU": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "allowedValues": [
+                "Standard",
+                "Enterprise"
             ]
         },
         "ciresonadpubipDnsName": {
@@ -143,21 +154,48 @@
                 "description": "The FQDN of the AD Domain created "
             }
         },
+        "adNicIPAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "The IP address of the new AD VM"
+            },
+            "defaultValue": "10.0.1.4"
+        },
         "AssetLocation": {
             "type": "string",
             "metadata": {
                 "description": "The location of resources such as templates and DSC modules that the script is dependent"
             },
-            "defaultValue": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/active-directory-new-domain/"
+            "defaultValue": "https://raw.githubusercontent.com/pzerger/CommunitySamples/master/ARM"
+        },
+        "UpdateVNetDNSTemplateFile": {
+            "type": "string",
+            "defaultValue": "10.0.1.0/24"
+        },
+        "SYSCTR1/domainjoinConfigurationFile": {
+            "type": "string",
+            "defaultValue": "Configuration.zip"
+        },
+        "SYSCTR1/domainjoinConfigurationFunction": {
+            "type": "string",
+            "defaultValue": "Configuration.ps1\\DomainJoin"
+        },
+        "SQL1/domainjoinConfigurationFile": {
+            "type": "string",
+            "defaultValue": "Configuration.zip"
+        },
+        "SQL1/domainjoinConfigurationFunction": {
+            "type": "string",
+            "defaultValue": "Configuration.ps1\\DomainJoin"
         }
     },
-        "variables": {
+    "variables": {
         "adDataDisk": "ADDataDisk",
-		"adDataDiskSize": 1000,
+        "adDataDiskSize": 1000,
         "ADDCImagePublisher": "MicrosoftWindowsServer",
         "ADDCImageOffer": "WindowsServer",
         "ADDCOSDiskName": "ADDCOSDisk",
-        "ADDCVmSize": "Standard_D1",
+        "ADDCVmSize": "Standard_D2",
         "ADDCVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'ContosoNET')]",
         "ADDCSubnetRef": "[concat(variables('ADDCVnetID'), '/subnets/', 'DCSubnet')]",
         "ADDCStorageAccountContainerName": "vhds",
@@ -167,15 +205,15 @@
         "SYSCTR1ImagePublisher": "MicrosoftWindowsServer",
         "SYSCTR1ImageOffer": "WindowsServer",
         "SYSCTR1OSDiskName": "SYSCTR1OSDisk",
-        "SYSCTR1VmSize": "Standard_D1",
+        "SYSCTR1VmSize": "Standard_D2",
         "SYSCTR1VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'ContosoNET')]",
         "SYSCTR1SubnetRef": "[concat(variables('SYSCTR1VnetID'), '/subnets/', 'SCSubnet')]",
         "SYSCTR1StorageAccountContainerName": "vhds",
         "SYSCTR1NicName": "[concat(parameters('SYSCTR1Name'), 'NetworkInterface')]",
-        "SQL1ImagePublisher": "MicrosoftWindowsServer",
-        "SQL1ImageOffer": "WindowsServer",
+        "SQL1ImagePublisher": "MicrosoftSQLServer",
+        "SQL1ImageOffer": "SQL2012SP2-WS2012R2",
         "SQL1OSDiskName": "SQL1OSDisk",
-        "SQL1VmSize": "Standard_D1",
+        "SQL1VmSize": "Standard_D2",
         "SQL1VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'ContosoNET')]",
         "SQL1SubnetRef": "[concat(variables('SQL1VnetID'), '/subnets/', 'SQLSubnet')]",
         "SQL1StorageAccountContainerName": "vhds",
@@ -184,7 +222,8 @@
         "ciresonsmpubipName": "ciresonsmpubip",
         "ciresonsqlpubipName": "ciresonsqlpubip",
         "vnetTemplateUri": "[concat(parameters('AssetLocation'),'/vnet.json')]",
-		"vnetwithDNSTemplateUri": "[concat(parameters('AssetLocation'),'/vnet-with-dns-server.json')]"
+        "vnetwithDNSTemplateUri": "[concat(parameters('AssetLocation'),'/vnet-with-dns-server.json')]",
+        "SQLDataDiskSize": "1000"
     },
     "resources": [
         {
@@ -425,7 +464,42 @@
                         }
                     ]
                 }
-            }
+
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Compute/virtualMachines/extensions",
+                    "name": "SYSCTR1/domainjoin",
+                    "apiVersion": "2015-05-01-preview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('SYSCTR1Name'))]",
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('ADDCName'),'/extensions/CreateADForest')]",
+                        "Microsoft.Resources/deployments/UpdateVNetDNS"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "1.9",
+                        "settings": {
+                            "ModulesUrl": "[concat(parameters('assetLocation'),'/Configuration.zip')]",
+                            "ConfigurationFunction": "Configuration.ps1\\DomainJoin",
+                            "Properties": {
+                                "DomainName": "[parameters('AdDomainNameFQDN')]",
+                                "AdminCreds": {
+                                    "UserName": "[parameters('ADDCAdminUserName')]",
+                                    "Password": "PrivateSettingsRef:adminPassword"
+                                }
+                            }
+                        },
+                        "protectedSettings": {
+                            "Items": {
+                                "adminPassword": "[parameters('SYSCTR1AdminPassword')]"
+                            }
+                        }
+                    }
+                }
+            ]
         },
         {
             "name": "[variables('SQL1NicName')]",
@@ -480,8 +554,8 @@
                 "storageProfile": {
                     "imageReference": {
                         "publisher": "[variables('SQL1ImagePublisher')]",
-                        "offer": "[variables('SQL1ImageOffer')]",
-                        "sku": "[parameters('SQL1WindowsOSVersion')]",
+                        "offer": "[parameters('SQL1ImageOffer')]",
+                        "sku": "[parameters('SQL1ImageSKU')]",
                         "version": "latest"
                     },
                     "osDisk": {
@@ -491,7 +565,19 @@
                         },
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
-                    }
+                    },
+                    "dataDisks": [
+                        {
+                            "vhd": {
+                                "uri": "[concat('http://',parameters('contososysctrappName'),'.blob.core.windows.net/',variables('SQL1StorageAccountContainerName'),'/', parameters('SQL1Name'),'-data-1.vhd')]"
+                            },
+                            "name": "[concat(parameters('SQL1Name'),'-data-disk1')]",
+                            "caching": "None",
+                            "createOption": "empty",
+                            "diskSizeGB": "[variables('SQLDataDiskSize')]",
+                            "lun": 0
+                        }
+                    ]
                 },
                 "networkProfile": {
                     "networkInterfaces": [
@@ -499,10 +585,44 @@
                             "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('SQL1NicName'))]"
                         }
                     ]
+                },
+
+            "resources": [
+                {
+                    "type": "Microsoft.Compute/virtualMachines/extensions",
+                    "name": "SQL1/domainjoin",
+                    "apiVersion": "2015-05-01-preview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('SQL1Name'))]",
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('ADDCName'),'/extensions/CreateADForest')]",
+                        "Microsoft.Resources/deployments/UpdateVNetDNS"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "1.9",
+                        "settings": {
+                            "ModulesUrl": "[concat(parameters('assetLocation'),'/Configuration.zip')]",
+                            "ConfigurationFunction": "Configuration.ps1\\DomainJoin",
+                            "Properties": {
+                                "DomainName": "[parameters('AdDomainNameFQDN')]",
+                                "AdminCreds": {
+                                    "UserName": "[parameters('ADDCAdminUserName')]",
+                                    "Password": "PrivateSettingsRef:adminPassword"
+                                }
+                            }
+                        },
+                        "protectedSettings": {
+                            "Items": {
+                                "adminPassword": "[parameters('SQL1AdminPassword')]"
+                            }
+                        }
+                    }
                 }
-            }
+            ]
         },
-        {
+       
             "name": "[variables('ciresonadpubipName')]",
             "type": "Microsoft.Network/publicIPAddresses",
             "location": "[parameters('location')]",
@@ -516,7 +636,41 @@
                 "dnsSettings": {
                     "domainNameLabel": "[parameters('ciresonadpubipDnsName')]"
                 }
-            }
+            },
+            "resources": [
+ {
+                    "type": "Microsoft.Compute/virtualMachines/extensions",
+                    "name": "SQL1/domainjoin",
+                    "apiVersion": "2015-05-01-preview",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('SQL1Name'))]",
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('ADDCName'),'/extensions/CreateADForest')]",
+                        "Microsoft.Resources/deployments/UpdateVNetDNS"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "1.9",
+                        "settings": {
+                            "ModulesUrl": "[concat(parameters('assetLocation'),'/Configuration.zip')]",
+                            "ConfigurationFunction": "Configuration.ps1\\DomainJoin",
+                            "Properties": {
+                                "DomainName": "[parameters('AdDomainNameFQDN')]",
+                                "AdminCreds": {
+                                    "UserName": "[parameters('ADDCAdminUserName')]",
+                                    "Password": "PrivateSettingsRef:adminPassword"
+                                }
+                            }
+                        },
+                        "protectedSettings": {
+                            "Items": {
+                                "adminPassword": "[parameters('SQL1AdminPassword')]"
+                            }
+                        }
+                    }
+                }
+            ]
         },
         {
             "name": "[variables('ciresonsmpubipName')]",
@@ -543,17 +697,47 @@
             "tags": {
                 "displayName": "ciresonsqlpubip"
             },
-            "AssetLocation": {
-                "type": "string",
-                "metadata": {
-                    "description": "The location of resources such as templates and DSC modules that the script is dependent"
-                },
-                "defaultValue": "https://github.com/pzerger/temp/tree/master"
-            },
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
                     "domainNameLabel": "[parameters('ciresonsqlpubipDnsName')]"
+                }
+            }
+        },
+        {
+            "name": "UpdateVNetDNS",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('ADDCName'),'/extensions/CreateADForest')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vnetwithDNSTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "ContosoNET"
+                    },
+                    "virtualNetworkAddressRange": {
+                        "value": "[parameters('addressPrefix')]"
+                    },
+                    "subnetName": {
+                        "value": "DCSubnet"
+                    },
+                    "subnetRange": {
+                        "value": "[parameters('DCSubnetPrefix')]"
+                    },
+                    "DNSServerAddress": {
+                        "value": [
+                            "[parameters('adNicIPAddress')]"
+                        ]
+                    }
                 }
             }
         }
