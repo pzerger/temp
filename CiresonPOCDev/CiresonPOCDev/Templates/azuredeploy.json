@@ -166,7 +166,7 @@
             "metadata": {
                 "description": "The location of resources such as templates and DSC modules that the script is dependent"
             },
-            "defaultValue": "https://raw.githubusercontent.com/pzerger/CommunitySamples/master/ARM"
+            "defaultValue": "https://raw.githubusercontent.com/pzerger/temp/master"
         },
         "UpdateVNetDNSTemplateFile": {
             "type": "string",
@@ -467,38 +467,7 @@
 
             },
             "resources": [
-                {
-                    "type": "Microsoft.Compute/virtualMachines/extensions",
-                    "name": "SYSCTR1/domainjoin",
-                    "apiVersion": "2015-05-01-preview",
-                    "location": "[resourceGroup().location]",
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('SYSCTR1Name'))]",
-                        "[concat('Microsoft.Compute/virtualMachines/', parameters('ADDCName'),'/extensions/CreateADForest')]",
-                        "Microsoft.Resources/deployments/UpdateVNetDNS"
-                    ],
-                    "properties": {
-                        "publisher": "Microsoft.Powershell",
-                        "type": "DSC",
-                        "typeHandlerVersion": "1.9",
-                        "settings": {
-                            "ModulesUrl": "[concat(parameters('assetLocation'),'/Configuration.zip')]",
-                            "ConfigurationFunction": "Configuration.ps1\\DomainJoin",
-                            "Properties": {
-                                "DomainName": "[parameters('AdDomainNameFQDN')]",
-                                "AdminCreds": {
-                                    "UserName": "[parameters('ADDCAdminUserName')]",
-                                    "Password": "PrivateSettingsRef:adminPassword"
-                                }
-                            }
-                        },
-                        "protectedSettings": {
-                            "Items": {
-                                "adminPassword": "[parameters('SYSCTR1AdminPassword')]"
-                            }
-                        }
-                    }
-                }
+                
             ]
         },
         {
@@ -638,38 +607,7 @@
                 }
             },
             "resources": [
- {
-                    "type": "Microsoft.Compute/virtualMachines/extensions",
-                    "name": "SQL1/domainjoin",
-                    "apiVersion": "2015-05-01-preview",
-                    "location": "[resourceGroup().location]",
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('SQL1Name'))]",
-                        "[concat('Microsoft.Compute/virtualMachines/', parameters('ADDCName'),'/extensions/CreateADForest')]",
-                        "Microsoft.Resources/deployments/UpdateVNetDNS"
-                    ],
-                    "properties": {
-                        "publisher": "Microsoft.Powershell",
-                        "type": "DSC",
-                        "typeHandlerVersion": "1.9",
-                        "settings": {
-                            "ModulesUrl": "[concat(parameters('assetLocation'),'/Configuration.zip')]",
-                            "ConfigurationFunction": "Configuration.ps1\\DomainJoin",
-                            "Properties": {
-                                "DomainName": "[parameters('AdDomainNameFQDN')]",
-                                "AdminCreds": {
-                                    "UserName": "[parameters('ADDCAdminUserName')]",
-                                    "Password": "PrivateSettingsRef:adminPassword"
-                                }
-                            }
-                        },
-                        "protectedSettings": {
-                            "Items": {
-                                "adminPassword": "[parameters('SQL1AdminPassword')]"
-                            }
-                        }
-                    }
-                }
+ 
             ]
         },
         {

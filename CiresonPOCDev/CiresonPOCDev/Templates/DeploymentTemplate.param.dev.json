@@ -40,6 +40,9 @@
         },
         "contososysctrappLocation": {
             "value": "West US"
+        },
+        "AssetLocation": {
+            "value": "https://raw.githubusercontent.com/pzerger/temp/master"
         }
     }
 }
