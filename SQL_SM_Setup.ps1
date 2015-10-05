@@ -1,5 +1,5 @@
 ﻿
-
+<#
 # Create SQL login
 Import-Module SQLPS
 $conn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $env:ComputerName
@@ -15,6 +15,27 @@ $SqlUser.Create()
 
 # Add login to sysadmin role
 $SqlUser.AddToRole('sysadmin')
+
+#>
+
+#Create SQL Login
+
+$cnString = "server=localhost;database=master;user id='contoso\adadmin';password='P@ssw0rd1!';trusted_connection=true;"
+$cn = new-object system.data.sqlclient.sqlconnection($cnstring)
+$cnSql = New-Object Microsoft.sqlserver.management.common.serverconnection($cn)
+$s = New-Object Microsoft.sqlserver.management.smo.server($cnSql)
+$s | Select Name, Version
+
+
+$SqlUser = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Login -ArgumentList $s,"contoso\adadmin" 
+$SqlUser.LoginType = 'WindowsUser'
+$sqlUser.PasswordPolicyEnforced = $false
+$SqlUser.Create()
+
+# Add login to sysadmin role
+$SqlUser.AddToRole('sysadmin')
+
+# login created successfully
 
 
 # Download System Center Service Manager 2012 R2 
