@@ -37,6 +37,7 @@ $p = Start-Process $destination -ArgumentList "/verysilent" -wait -NoNewWindow -
 
     $verifySmExe = Test-Path -Path 'C:\SC2012 R2 SCSM\amd64\setup.exe'
 
+<#
 
 # Install SCSM 2012 R2
 # Requires domain user with local admin rights. 
@@ -55,3 +56,4 @@ $p = Start-Process $SmExeFile -ArgumentList '/Install:Server /AcceptEula:YES /Re
     $p.ExitCode
 
 
+    #>
