@@ -19,12 +19,12 @@ $SqlUser.AddToRole('sysadmin')
 #>
 
 #Create SQL Login
-
+import-module SQLPS
 $cnString = "server=localhost;database=master;user id='contoso\adadmin';password='P@ssw0rd1!';trusted_connection=true;"
 $cn = new-object system.data.sqlclient.sqlconnection($cnstring)
 $cnSql = New-Object Microsoft.sqlserver.management.common.serverconnection($cn)
 $s = New-Object Microsoft.sqlserver.management.smo.server($cnSql)
-$s | Select Name, Version
+# $s | Select Name, Version
 
 
 $SqlUser = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Login -ArgumentList $s,"contoso\adadmin" 
