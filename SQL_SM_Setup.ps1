@@ -1,7 +1,7 @@
 ﻿
 
 # Create SQL login
-
+Import-Module SQLPS
 $conn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $env:ComputerName
 $conn.applicationName = "PowerShell SMO"
 $conn.ServerInstance = "localhost"
@@ -37,16 +37,25 @@ $p = Start-Process $destination -ArgumentList "/verysilent" -wait -NoNewWindow -
 
     $verifySmExe = Test-Path -Path 'C:\SC2012 R2 SCSM\amd64\setup.exe'
 
-<#
+#<#
 
 # Install SCSM 2012 R2
 # Requires domain user with local admin rights. 
 
-Start-Executable -FilePath $SmExeFile -ArgumentList $SmArgs
+# Start-Executable -FilePath $SmExeFile -ArgumentList $SmArgs
+
+# Set SQL Server Agent startup type to 'Automatic' and start
+Set-Service SQLSERVERAGENT -startuptype "automatic"
+Start-Service SQLSERVERAGENT
 
 # Install SCSM Management Group. Must be run as a domain user with local admin rights.
 $SmExeFile = 'C:\SC2012 R2 SCSM\amd64\setup.exe'
-$p = Start-Process $SmExeFile -ArgumentList '/Install:Server /AcceptEula:YES /RegisteredOwner:"Contoso Admin" /RegisteredOrganization:"Contoso Corp" /ProductKey:BXH69-M62YX-QQD6R-3GPWX-8WMFY /CreateNewDatabase /ManagementGroupName:mg_cireson /AdminRoleGroup:"contoso.corp\domain admins" /ServiceRunUnderAccount:contoso.corp\adadmin\P@ssw0rd1! /WorkflowAccount:contoso.corp\adadmin\P@ssw0rd1! /CustomerExperienceImprovementProgram:NO /EnableErrorReporting:NO /Silent' -wait -NoNewWindow -PassThru
+
+# Provide credentials to run process as a domain user
+# Found credential guidance at http://blogs.technet.com/b/benshy/archive/2012/06/04/using-a-powershell-script-to-run-as-a-different-user-amp-elevate-the-process.aspx
+$credential = New-Object System.Management.Automation.PsCredential("contoso\adadmin", (ConvertTo-SecureString "P@ssw0rd1!" -AsPlainText -Force))
+
+$p = Start-Process $SmExeFile -Credential $credential -ArgumentList '/Install:Server /AcceptEula:YES /RegisteredOwner:"Contoso Admin" /RegisteredOrganization:"Contoso Corp" /ProductKey:BXH69-M62YX-QQD6R-3GPWX-8WMFY /CreateNewDatabase /ManagementGroupName:mg_cireson /AdminRoleGroup:"contoso.corp\domain admins" /ServiceRunUnderAccount:contoso.corp\adadmin\P@ssw0rd1! /WorkflowAccount:contoso.corp\adadmin\P@ssw0rd1! /CustomerExperienceImprovementProgram:NO /EnableErrorReporting:NO /Silent' -wait -NoNewWindow -PassThru
 
     # returns "TRUE" when complete
     $p.HasExited
