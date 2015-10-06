@@ -42,12 +42,6 @@ configuration PrepareAlwaysOnSqlServer
              RetryCount = $RetryCount
         }
 
-        cDiskNoRestart DataDisk
-        {
-            DiskNumber = 2
-            DriveLetter = "F"
-        }
-
         xWaitforDisk Disk3
         {
              DiskNumber = 3
