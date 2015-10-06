@@ -60,19 +60,7 @@ configuration PrepareAlwaysOnSqlServer
             Name = "RSAT-AD-PowerShell"
             Ensure = "Present"
         }
-        xWaitForADDomain DscForestWait 
-        { 
-            DomainName = $DomainName 
-            DomainUserCredential= $DomainCreds
-            RetryCount = $RetryCount 
-            RetryIntervalSec = $RetryIntervalSec 
-        }
-        xComputer DomainJoin
-        {
-            Name = $env:COMPUTERNAME
-            DomainName = $DomainName
-            Credential = $DomainCreds
-        }
+
         xFirewall DatabaseEngineFirewallRule
         {
             Direction = "Inbound"
